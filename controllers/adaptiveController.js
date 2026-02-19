@@ -71,3 +71,21 @@ export const getConceptMastery = catchAsync(async (req, res, next) => {
     data: { mastery },
   });
 });
+
+// @desc    Get comprehensive adaptive feedback (performance + interactions)
+// @route   GET /api/adaptive/comprehensive-feedback/:userId/:moduleName/:sessionId
+// @access  Private
+export const getComprehensiveFeedback = catchAsync(async (req, res, next) => {
+  const { userId, moduleName, sessionId } = req.params;
+
+  const feedback = await adaptiveLearningService.getComprehensiveAdaptiveFeedback(
+    userId,
+    moduleName,
+    sessionId,
+  );
+
+  res.status(200).json({
+    success: true,
+    data: { feedback },
+  });
+});

@@ -4,6 +4,7 @@ import {
   getAdaptiveParameters,
   getPerformanceTrends,
   getConceptMastery,
+  getComprehensiveFeedback,
 } from "../controllers/adaptiveController.js";
 import { protect, authorizeChild } from "../middleware/auth.js";
 
@@ -27,6 +28,11 @@ router.get(
   "/mastery/:userId/:moduleName/:concept",
   authorizeChild,
   getConceptMastery,
+);
+router.get(
+  "/comprehensive-feedback/:userId/:moduleName/:sessionId",
+  authorizeChild,
+  getComprehensiveFeedback,
 );
 
 export default router;

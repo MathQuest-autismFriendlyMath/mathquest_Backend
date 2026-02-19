@@ -1,5 +1,5 @@
-import adaptiveLearningService from '../services/adaptiveLearning.js';
-import { catchAsync } from '../utils/errorHandler.js';
+import adaptiveLearningService from "../services/adaptiveLearning.js";
+import { catchAsync } from "../utils/errorHandler.js";
 
 // @desc    Get adaptive recommendations
 // @route   GET /api/adaptive/recommendation/:userId/:moduleName
@@ -7,7 +7,10 @@ import { catchAsync } from '../utils/errorHandler.js';
 export const getRecommendation = catchAsync(async (req, res, next) => {
   const { userId, moduleName } = req.params;
 
-  const recommendations = await adaptiveLearningService.getRecommendations(userId, moduleName);
+  const recommendations = await adaptiveLearningService.getRecommendations(
+    userId,
+    moduleName,
+  );
 
   res.status(200).json({
     success: true,
@@ -21,7 +24,10 @@ export const getRecommendation = catchAsync(async (req, res, next) => {
 export const getAdaptiveParameters = catchAsync(async (req, res, next) => {
   const { userId, moduleName } = req.params;
 
-  const parameters = await adaptiveLearningService.getAdaptiveParameters(userId, moduleName);
+  const parameters = await adaptiveLearningService.getAdaptiveParameters(
+    userId,
+    moduleName,
+  );
 
   res.status(200).json({
     success: true,
@@ -37,9 +43,9 @@ export const getPerformanceTrends = catchAsync(async (req, res, next) => {
   const { days } = req.query;
 
   const trends = await adaptiveLearningService.analyzePerformanceTrends(
-    userId, 
-    moduleName, 
-    parseInt(days) || 7
+    userId,
+    moduleName,
+    parseInt(days) || 7,
   );
 
   res.status(200).json({
@@ -54,7 +60,11 @@ export const getPerformanceTrends = catchAsync(async (req, res, next) => {
 export const getConceptMastery = catchAsync(async (req, res, next) => {
   const { userId, moduleName, concept } = req.params;
 
-  const mastery = await adaptiveLearningService.assessConceptMastery(userId, moduleName, concept);
+  const mastery = await adaptiveLearningService.assessConceptMastery(
+    userId,
+    moduleName,
+    concept,
+  );
 
   res.status(200).json({
     success: true,

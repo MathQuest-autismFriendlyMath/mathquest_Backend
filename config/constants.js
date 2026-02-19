@@ -1,33 +1,33 @@
 export const USER_ROLES = {
-  PARENT: 'parent',
-  CHILD: 'child',
+  PARENT: "parent",
+  CHILD: "child",
 };
 
 export const DIFFICULTY_LEVELS = {
-  EASY: 'easy',
-  MEDIUM: 'medium',
-  HARD: 'hard',
+  EASY: "easy",
+  MEDIUM: "medium",
+  HARD: "hard",
 };
 
 export const MODULE_NAMES = {
-  NUMBER_RECOGNITION: 'number-recognition',
-  COUNTING: 'counting',
-  ADDITION: 'addition',
-  SUBTRACTION: 'subtraction',
-  PATTERN_SEQUENCE: 'pattern-sequence',
-  VISUAL_MULTIPLICATION: 'visual-multiplication',
-  VISUAL_FRACTIONS: 'visual-fractions',
-  MONEY: 'money',
-  TIME: 'time',
-  GEOMETRY: 'geometry',
+  NUMBER_RECOGNITION: "number-recognition",
+  COUNTING: "counting",
+  ADDITION: "addition",
+  SUBTRACTION: "subtraction",
+  PATTERN_SEQUENCE: "pattern-sequence",
+  VISUAL_MULTIPLICATION: "visual-multiplication",
+  VISUAL_FRACTIONS: "visual-fractions",
+  MONEY: "money",
+  TIME: "time",
+  GEOMETRY: "geometry",
 };
 
 export const LEARNING_WORLDS = {
-  GARDEN: 'garden-world',
-  STORE: 'store-world',
-  TIME: 'time-world',
-  PATTERN: 'pattern-world',
-  SHAPE: 'shape-world',
+  GARDEN: "garden-world",
+  STORE: "store-world",
+  TIME: "time-world",
+  PATTERN: "pattern-world",
+  SHAPE: "shape-world",
 };
 
 export const MASTERY_THRESHOLDS = {

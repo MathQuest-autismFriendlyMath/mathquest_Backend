@@ -1,6 +1,6 @@
-import PerformanceLog from '../models/PerformanceLog.js';
-import { catchAsync } from '../utils/errorHandler.js';
-import { v4 as uuidv4 } from 'uuid';
+import PerformanceLog from "../models/PerformanceLog.js";
+import { catchAsync } from "../utils/errorHandler.js";
+import { v4 as uuidv4 } from "uuid";
 
 // @desc    Log performance data
 // @route   POST /api/performance/log
@@ -39,7 +39,7 @@ export const logPerformance = catchAsync(async (req, res, next) => {
 
   res.status(201).json({
     success: true,
-    message: 'Performance logged successfully',
+    message: "Performance logged successfully",
     data: { log: performanceLog },
   });
 });
@@ -52,7 +52,7 @@ export const getPerformanceHistory = catchAsync(async (req, res, next) => {
   const { moduleName, limit = 50, startDate, endDate } = req.query;
 
   const query = { userId };
-  
+
   if (moduleName) {
     query.moduleName = moduleName;
   }
@@ -85,12 +85,13 @@ export const getSessionPerformance = catchAsync(async (req, res, next) => {
   if (logs.length === 0) {
     return res.status(404).json({
       success: false,
-      message: 'Session not found',
+      message: "Session not found",
     });
   }
 
-  const correctCount = logs.filter(log => log.isCorrect).length;
-  const avgResponseTime = logs.reduce((sum, log) => sum + log.responseTime, 0) / logs.length;
+  const correctCount = logs.filter((log) => log.isCorrect).length;
+  const avgResponseTime =
+    logs.reduce((sum, log) => sum + log.responseTime, 0) / logs.length;
 
   const summary = {
     sessionId,

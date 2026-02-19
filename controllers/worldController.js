@@ -1,38 +1,38 @@
-import LearningWorld from '../models/LearningWorld.js';
-import Progress from '../models/Progress.js';
-import { catchAsync, AppError } from '../utils/errorHandler.js';
+import LearningWorld from "../models/LearningWorld.js";
+import Progress from "../models/Progress.js";
+import { catchAsync, AppError } from "../utils/errorHandler.js";
 
 // World configuration
 const WORLD_CONFIG = {
-  'garden-world': {
-    name: 'Garden World',
-    description: 'Learn counting and multiplication in the garden',
-    modules: ['counting', 'visual-multiplication'],
+  "garden-world": {
+    name: "Garden World",
+    description: "Learn counting and multiplication in the garden",
+    modules: ["counting", "visual-multiplication"],
     unlockRequirement: null, // Always unlocked
   },
-  'store-world': {
-    name: 'Store World',
-    description: 'Practice money and shopping math',
-    modules: ['money', 'addition', 'subtraction'],
-    unlockRequirement: { world: 'garden-world', completion: 50 },
+  "store-world": {
+    name: "Store World",
+    description: "Practice money and shopping math",
+    modules: ["money", "addition", "subtraction"],
+    unlockRequirement: { world: "garden-world", completion: 50 },
   },
-  'time-world': {
-    name: 'Time World',
-    description: 'Master time and schedules',
-    modules: ['time'],
-    unlockRequirement: { world: 'garden-world', completion: 50 },
+  "time-world": {
+    name: "Time World",
+    description: "Master time and schedules",
+    modules: ["time"],
+    unlockRequirement: { world: "garden-world", completion: 50 },
   },
-  'pattern-world': {
-    name: 'Pattern World',
-    description: 'Discover patterns and sequences',
-    modules: ['pattern-sequence'],
-    unlockRequirement: { world: 'store-world', completion: 60 },
+  "pattern-world": {
+    name: "Pattern World",
+    description: "Discover patterns and sequences",
+    modules: ["pattern-sequence"],
+    unlockRequirement: { world: "store-world", completion: 60 },
   },
-  'shape-world': {
-    name: 'Shape World',
-    description: 'Explore geometry and spatial thinking',
-    modules: ['geometry'],
-    unlockRequirement: { world: 'pattern-world', completion: 60 },
+  "shape-world": {
+    name: "Shape World",
+    description: "Explore geometry and spatial thinking",
+    modules: ["geometry"],
+    unlockRequirement: { world: "pattern-world", completion: 60 },
   },
 };
 
@@ -48,9 +48,9 @@ export const getUserWorlds = catchAsync(async (req, res, next) => {
   if (worlds.length === 0) {
     const gardenWorld = await LearningWorld.create({
       userId,
-      worldName: 'garden-world',
+      worldName: "garden-world",
       unlocked: true,
-      modules: WORLD_CONFIG['garden-world'].modules.map(m => ({
+      modules: WORLD_CONFIG["garden-world"].modules.map((m) => ({
         moduleName: m,
         completed: false,
         stars: 0,
@@ -58,13 +58,18 @@ export const getUserWorlds = catchAsync(async (req, res, next) => {
     });
 
     // Create other worlds (locked)
-    const otherWorlds = ['store-world', 'time-world', 'pattern-world', 'shape-world'];
+    const otherWorlds = [
+      "store-world",
+      "time-world",
+      "pattern-world",
+      "shape-world",
+    ];
     for (const worldName of otherWorlds) {
       await LearningWorld.create({
         userId,
         worldName,
         unlocked: false,
-        modules: WORLD_CONFIG[worldName].modules.map(m => ({
+        modules: WORLD_CONFIG[worldName].modules.map((m) => ({
           moduleName: m,
           completed: false,
           stars: 0,
@@ -89,7 +94,11 @@ export const getUserWorlds = catchAsync(async (req, res, next) => {
           worldName: config.unlockRequirement.world,
         });
 
-        if (requiredWorld && requiredWorld.completionPercentage >= config.unlockRequirement.completion) {
+        if (
+          requiredWorld &&
+          requiredWorld.completionPercentage >=
+            config.unlockRequirement.completion
+        ) {
           world.unlocked = true;
           world.firstUnlockedAt = Date.now();
           await world.save();
@@ -98,7 +107,7 @@ export const getUserWorlds = catchAsync(async (req, res, next) => {
     }
   }
 
-  const worldsWithConfig = worlds.map(w => ({
+  const worldsWithConfig = worlds.map((w) => ({
     ...w.toObject(),
     config: WORLD_CONFIG[w.worldName],
   }));
@@ -118,12 +127,12 @@ export const getWorld = catchAsync(async (req, res, next) => {
   const world = await LearningWorld.findOne({ userId, worldName });
 
   if (!world) {
-    return next(new AppError('World not found', 404));
+    return next(new AppError("World not found", 404));
   }
 
   res.status(200).json({
     success: true,
-    data: { 
+    data: {
       world: {
         ...world.toObject(),
         config: WORLD_CONFIG[worldName],
@@ -141,29 +150,34 @@ export const updateWorldProgress = catchAsync(async (req, res, next) => {
   const world = await LearningWorld.findOne({ userId, worldName });
 
   if (!world) {
-    return next(new AppError('World not found', 404));
+    return next(new AppError("World not found", 404));
   }
 
   if (!world.unlocked) {
-    return next(new AppError('World is locked', 403));
+    return next(new AppError("World is locked", 403));
   }
 
   // Update module in world
-  const moduleIndex = world.modules.findIndex(m => m.moduleName === moduleName);
-  
+  const moduleIndex = world.modules.findIndex(
+    (m) => m.moduleName === moduleName,
+  );
+
   if (moduleIndex === -1) {
-    return next(new AppError('Module not found in this world', 404));
+    return next(new AppError("Module not found in this world", 404));
   }
 
   world.modules[moduleIndex].completed = true;
-  world.modules[moduleIndex].stars = Math.max(world.modules[moduleIndex].stars, stars || 0);
+  world.modules[moduleIndex].stars = Math.max(
+    world.modules[moduleIndex].stars,
+    stars || 0,
+  );
   world.lastAccessedAt = Date.now();
 
   await world.save();
 
   res.status(200).json({
     success: true,
-    message: 'World progress updated',
+    message: "World progress updated",
     data: { world },
   });
 });
@@ -178,28 +192,32 @@ export const getRecommendedWorld = catchAsync(async (req, res, next) => {
   const progress = await Progress.find({ userId });
 
   // Find current active world (unlocked and not complete)
-  const activeWorld = worlds.find(w => w.unlocked && w.completionPercentage < 100);
+  const activeWorld = worlds.find(
+    (w) => w.unlocked && w.completionPercentage < 100,
+  );
 
   if (!activeWorld) {
     return res.status(200).json({
       success: true,
       data: {
         recommendation: null,
-        message: 'All worlds completed! Great job!',
+        message: "All worlds completed! Great job!",
       },
     });
   }
 
   // Find next module to focus on
-  const incompleteModule = activeWorld.modules.find(m => !m.completed);
+  const incompleteModule = activeWorld.modules.find((m) => !m.completed);
 
   let focusModule = null;
   if (incompleteModule) {
-    const moduleProgress = progress.find(p => p.moduleName === incompleteModule.moduleName);
+    const moduleProgress = progress.find(
+      (p) => p.moduleName === incompleteModule.moduleName,
+    );
     focusModule = {
       moduleName: incompleteModule.moduleName,
       currentAccuracy: moduleProgress?.accuracy || 0,
-      masteryLevel: moduleProgress?.masteryLevel || 'beginner',
+      masteryLevel: moduleProgress?.masteryLevel || "beginner",
     };
   }
 

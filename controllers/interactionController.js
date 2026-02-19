@@ -1,10 +1,10 @@
-import InteractionEvent from '../models/InteractionEvent.js';
-import { asyncHandler } from '../utils/errorHandler.js';
+import InteractionEvent from "../models/InteractionEvent.js";
+import { catchAsync } from '../utils/errorHandler.js';
 
 // @desc    Log interaction event
 // @route   POST /api/interactions/event
 // @access  Private
-export const logInteractionEvent = asyncHandler(async (req, res) => {
+export const logInteractionEvent = catchAsync(async (req, res) => {
   const { sessionId, moduleName, questionId, eventType, eventData } = req.body;
 
   const event = await InteractionEvent.create({
@@ -13,30 +13,30 @@ export const logInteractionEvent = asyncHandler(async (req, res) => {
     moduleName,
     questionId,
     eventType,
-    eventData
+    eventData,
   });
 
   res.status(201).json({
     success: true,
-    data: event
+    data: event,
   });
 });
 
 // @desc    Log batch of interaction events
 // @route   POST /api/interactions/events/batch
 // @access  Private
-export const logInteractionEventsBatch = asyncHandler(async (req, res) => {
+export const logInteractionEventsBatch = catchAsync(async (req, res) => {
   const { events } = req.body;
 
   if (!Array.isArray(events) || events.length === 0) {
     res.status(400);
-    throw new Error('Events array is required');
+    throw new Error("Events array is required");
   }
 
   // Add userId to all events
-  const eventsWithUser = events.map(event => ({
+  const eventsWithUser = events.map((event) => ({
     ...event,
-    userId: req.user._id
+    userId: req.user._id,
   }));
 
   const savedEvents = await InteractionEvent.insertMany(eventsWithUser);
@@ -44,54 +44,60 @@ export const logInteractionEventsBatch = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     count: savedEvents.length,
-    data: savedEvents
+    data: savedEvents,
   });
 });
 
 // @desc    Get session events
 // @route   GET /api/interactions/session/:sessionId
 // @access  Private
-export const getSessionEvents = asyncHandler(async (req, res) => {
+export const getSessionEvents = catchAsync(async (req, res) => {
   const { sessionId } = req.params;
 
-  const events = await InteractionEvent.getSessionEvents(req.user._id, sessionId);
+  const events = await InteractionEvent.getSessionEvents(
+    req.user._id,
+    sessionId,
+  );
 
   res.json({
     success: true,
     count: events.length,
-    data: events
+    data: events,
   });
 });
 
 // @desc    Get engagement metrics for a session
 // @route   GET /api/interactions/session/:sessionId/metrics
 // @access  Private
-export const getSessionMetrics = asyncHandler(async (req, res) => {
+export const getSessionMetrics = catchAsync(async (req, res) => {
   const { sessionId } = req.params;
 
-  const metrics = await InteractionEvent.calculateEngagementMetrics(req.user._id, sessionId);
+  const metrics = await InteractionEvent.calculateEngagementMetrics(
+    req.user._id,
+    sessionId,
+  );
 
   if (!metrics) {
     res.status(404);
-    throw new Error('No interaction data found for this session');
+    throw new Error("No interaction data found for this session");
   }
 
   res.json({
     success: true,
-    data: metrics
+    data: metrics,
   });
 });
 
 // @desc    Get user interaction patterns
 // @route   GET /api/interactions/patterns
 // @access  Private
-export const getUserInteractionPatterns = asyncHandler(async (req, res) => {
+export const getUserInteractionPatterns = catchAsync(async (req, res) => {
   const { moduleName, limit = 100 } = req.query;
 
   const patterns = await InteractionEvent.getUserPatterns(
     req.user._id,
     moduleName,
-    parseInt(limit)
+    parseInt(limit),
   );
 
   // Analyze patterns for insights
@@ -102,27 +108,27 @@ export const getUserInteractionPatterns = asyncHandler(async (req, res) => {
     count: patterns.length,
     data: {
       events: patterns,
-      analysis
-    }
+      analysis,
+    },
   });
 });
 
 // @desc    Get real-time adaptive recommendations
 // @route   POST /api/interactions/adaptive-feedback
 // @access  Private
-export const getAdaptiveFeedback = asyncHandler(async (req, res) => {
+export const getAdaptiveFeedback = catchAsync(async (req, res) => {
   const { sessionId, currentQuestionId, recentEvents } = req.body;
 
   // Analyze recent events for patterns indicating need for support
   const feedback = await generateAdaptiveFeedback(
     recentEvents,
     req.user._id,
-    sessionId
+    sessionId,
   );
 
   res.json({
     success: true,
-    data: feedback
+    data: feedback,
   });
 });
 
@@ -130,9 +136,9 @@ export const getAdaptiveFeedback = asyncHandler(async (req, res) => {
 function analyzeInteractionPatterns(events) {
   if (!events || events.length === 0) {
     return {
-      engagementLevel: 'unknown',
-      hesitationTendency: 'unknown',
-      preferredInteractionMode: 'unknown'
+      engagementLevel: "unknown",
+      hesitationTendency: "unknown",
+      preferredInteractionMode: "unknown",
     };
   }
 
@@ -142,30 +148,42 @@ function analyzeInteractionPatterns(events) {
   let mouseInteractions = 0;
   let keyboardInteractions = 0;
 
-  events.forEach(event => {
+  events.forEach((event) => {
     eventTypes[event.eventType] = (eventTypes[event.eventType] || 0) + 1;
-    
-    if (event.eventType === 'mouse_move' || event.eventType === 'mouse_hover' || event.eventType === 'mouse_click') {
+
+    if (
+      event.eventType === "mouse_move" ||
+      event.eventType === "mouse_hover" ||
+      event.eventType === "mouse_click"
+    ) {
       mouseInteractions++;
     }
-    if (event.eventType === 'key_down' || event.eventType === 'key_up') {
+    if (event.eventType === "key_down" || event.eventType === "key_up") {
       keyboardInteractions++;
     }
-    
+
     if (event.eventData?.reactionTime) {
       if (event.eventData.reactionTime > 8000) totalHesitation++;
       if (event.eventData.reactionTime < 2000) totalRapid++;
     }
   });
 
-  const engagementLevel = events.length > 200 ? 'high' :
-                         events.length > 100 ? 'medium' : 'low';
-  
-  const hesitationTendency = totalHesitation > totalRapid ? 'high' :
-                             totalHesitation < totalRapid ? 'low' : 'medium';
-  
-  const preferredInteractionMode = mouseInteractions > keyboardInteractions ? 'mouse' :
-                                   keyboardInteractions > mouseInteractions ? 'keyboard' : 'mixed';
+  const engagementLevel =
+    events.length > 200 ? "high" : events.length > 100 ? "medium" : "low";
+
+  const hesitationTendency =
+    totalHesitation > totalRapid
+      ? "high"
+      : totalHesitation < totalRapid
+        ? "low"
+        : "medium";
+
+  const preferredInteractionMode =
+    mouseInteractions > keyboardInteractions
+      ? "mouse"
+      : keyboardInteractions > mouseInteractions
+        ? "keyboard"
+        : "mixed";
 
   return {
     engagementLevel,
@@ -173,7 +191,7 @@ function analyzeInteractionPatterns(events) {
     preferredInteractionMode,
     eventTypeCounts: eventTypes,
     hesitationCount: totalHesitation,
-    rapidResponseCount: totalRapid
+    rapidResponseCount: totalRapid,
   };
 }
 
@@ -184,7 +202,7 @@ async function generateAdaptiveFeedback(recentEvents, userId, sessionId) {
       shouldProvideHint: false,
       shouldSimplify: false,
       shouldEncourage: false,
-      recommendedAction: 'continue'
+      recommendedAction: "continue",
     };
   }
 
@@ -194,8 +212,8 @@ async function generateAdaptiveFeedback(recentEvents, userId, sessionId) {
     shouldEncourage: false,
     shouldHighlightVisual: false,
     shouldPlayAudioCue: false,
-    recommendedAction: 'continue',
-    message: null
+    recommendedAction: "continue",
+    message: null,
   };
 
   // Analyze recent events
@@ -203,16 +221,16 @@ async function generateAdaptiveFeedback(recentEvents, userId, sessionId) {
   let hoverRepeats = {};
   let lastQuestionTime = null;
 
-  recentEvents.forEach(event => {
-    if (event.eventType === 'question_displayed') {
+  recentEvents.forEach((event) => {
+    if (event.eventType === "question_displayed") {
       lastQuestionTime = event.eventData?.timestamp || Date.now();
     }
-    
-    if (event.eventType === 'idle_detected') {
+
+    if (event.eventType === "idle_detected") {
       idleTime += event.eventData?.duration || 0;
     }
-    
-    if (event.eventType === 'choice_hover_start') {
+
+    if (event.eventType === "choice_hover_start") {
       const choiceId = event.eventData?.choiceIndex;
       hoverRepeats[choiceId] = (hoverRepeats[choiceId] || 0) + 1;
     }
@@ -222,23 +240,23 @@ async function generateAdaptiveFeedback(recentEvents, userId, sessionId) {
   if (idleTime > 10000) {
     feedback.shouldEncourage = true;
     feedback.shouldPlayAudioCue = true;
-    feedback.recommendedAction = 'prompt';
-    feedback.message = 'Take your time! Try selecting an answer.';
+    feedback.recommendedAction = "prompt";
+    feedback.message = "Take your time! Try selecting an answer.";
   }
 
   // Rule: Repeated hover on wrong answer → provide visual cue
   const maxHovers = Math.max(...Object.values(hoverRepeats), 0);
   if (maxHovers > 3) {
     feedback.shouldHighlightVisual = true;
-    feedback.recommendedAction = 'visualCue';
-    feedback.message = 'Let me highlight the important parts for you.';
+    feedback.recommendedAction = "visualCue";
+    feedback.message = "Let me highlight the important parts for you.";
   }
 
   // Rule: Long reaction time → provide hint
-  if (lastQuestionTime && (Date.now() - lastQuestionTime) > 15000) {
+  if (lastQuestionTime && Date.now() - lastQuestionTime > 15000) {
     feedback.shouldProvideHint = true;
-    feedback.recommendedAction = 'hint';
-    feedback.message = 'Would you like a hint?';
+    feedback.recommendedAction = "hint";
+    feedback.message = "Would you like a hint?";
   }
 
   return feedback;

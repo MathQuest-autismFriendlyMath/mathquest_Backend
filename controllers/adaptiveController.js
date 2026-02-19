@@ -78,11 +78,12 @@ export const getConceptMastery = catchAsync(async (req, res, next) => {
 export const getComprehensiveFeedback = catchAsync(async (req, res, next) => {
   const { userId, moduleName, sessionId } = req.params;
 
-  const feedback = await adaptiveLearningService.getComprehensiveAdaptiveFeedback(
-    userId,
-    moduleName,
-    sessionId,
-  );
+  const feedback =
+    await adaptiveLearningService.getComprehensiveAdaptiveFeedback(
+      userId,
+      moduleName,
+      sessionId,
+    );
 
   res.status(200).json({
     success: true,

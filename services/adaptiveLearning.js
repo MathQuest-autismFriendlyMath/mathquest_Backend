@@ -219,10 +219,10 @@ class AdaptiveLearningService {
    * Analyze interaction patterns to understand learning behaviors
    */
   async analyzeInteractionBehavior(userId, moduleName, sessionId = null) {
-    const query = sessionId 
+    const query = sessionId
       ? { userId, moduleName, sessionId }
       : { userId, moduleName };
-    
+
     const recentInteractions = await InteractionEvent.find(query)
       .sort({ timestamp: -1 })
       .limit(500);
@@ -232,22 +232,23 @@ class AdaptiveLearningService {
         engagementScore: 0,
         hesitationScore: 0,
         confidenceScore: 0,
-        preferredLearningMode: 'visual',
-        needsSupport: false
+        preferredLearningMode: "visual",
+        needsSupport: false,
       };
     }
 
     // Calculate engagement score (based on interaction frequency and diversity)
     const engagementScore = this._calculateEngagementScore(recentInteractions);
-    
+
     // Calculate hesitation score (based on hover patterns, reaction times)
     const hesitationScore = this._calculateHesitationScore(recentInteractions);
-    
+
     // Calculate confidence score (based on response speed and accuracy correlation)
     const confidenceScore = this._calculateConfidenceScore(recentInteractions);
-    
+
     // Determine preferred learning mode
-    const preferredLearningMode = this._determinePreferredLearningMode(recentInteractions);
+    const preferredLearningMode =
+      this._determinePreferredLearningMode(recentInteractions);
 
     return {
       engagementScore,
@@ -255,7 +256,10 @@ class AdaptiveLearningService {
       confidenceScore,
       preferredLearningMode,
       needsSupport: hesitationScore > 0.6 || confidenceScore < 0.4,
-      recommendedScaffolding: this._recommendScaffolding(hesitationScore, confidenceScore)
+      recommendedScaffolding: this._recommendScaffolding(
+        hesitationScore,
+        confidenceScore,
+      ),
     };
   }
 
@@ -263,22 +267,31 @@ class AdaptiveLearningService {
    * Get comprehensive adaptive feedback based on both performance and interaction
    */
   async getComprehensiveAdaptiveFeedback(userId, moduleName, sessionId) {
-    const [performanceTrends, interactionBehavior, recommendations] = await Promise.all([
-      this.analyzePerformanceTrends(userId, moduleName),
-      this.analyzeInteractionBehavior(userId, moduleName, sessionId),
-      this.getRecommendations(userId, moduleName)
-    ]);
+    const [performanceTrends, interactionBehavior, recommendations] =
+      await Promise.all([
+        this.analyzePerformanceTrends(userId, moduleName),
+        this.analyzeInteractionBehavior(userId, moduleName, sessionId),
+        this.getRecommendations(userId, moduleName),
+      ]);
 
     // Combine insights from all sources
     const feedback = {
       ...recommendations,
       performanceTrend: performanceTrends.trend,
-      engagementLevel: this._getEngagementLevel(interactionBehavior.engagementScore),
-      confidenceLevel: this._getConfidenceLevel(interactionBehavior.confidenceScore),
+      engagementLevel: this._getEngagementLevel(
+        interactionBehavior.engagementScore,
+      ),
+      confidenceLevel: this._getConfidenceLevel(
+        interactionBehavior.confidenceScore,
+      ),
       needsEncouragement: interactionBehavior.hesitationScore > 0.7,
-      needsVisualSupport: interactionBehavior.preferredLearningMode === 'visual',
+      needsVisualSupport:
+        interactionBehavior.preferredLearningMode === "visual",
       recommendedHintType: this._recommendHintType(interactionBehavior),
-      paceAdjustment: this._recommendPaceAdjustment(interactionBehavior, performanceTrends)
+      paceAdjustment: this._recommendPaceAdjustment(
+        interactionBehavior,
+        performanceTrends,
+      ),
     };
 
     return feedback;
@@ -289,9 +302,9 @@ class AdaptiveLearningService {
    */
   _calculateEngagementScore(interactions) {
     // Higher score = more engaged (more interactions, diverse types)
-    const uniqueEventTypes = new Set(interactions.map(i => i.eventType)).size;
+    const uniqueEventTypes = new Set(interactions.map((i) => i.eventType)).size;
     const interactionRate = interactions.length / 100; // normalize
-    
+
     return Math.min(1, (uniqueEventTypes / 10) * 0.5 + interactionRate * 0.5);
   }
 
@@ -300,17 +313,22 @@ class AdaptiveLearningService {
     let hesitationIndicators = 0;
     let totalEvents = 0;
 
-    interactions.forEach(event => {
+    interactions.forEach((event) => {
       totalEvents++;
-      
-      if (event.eventType === 'idle_detected') hesitationIndicators += 2;
-      if (event.eventType === 'choice_hover_start' && event.eventData?.hoverDuration > 3000) {
+
+      if (event.eventType === "idle_detected") hesitationIndicators += 2;
+      if (
+        event.eventType === "choice_hover_start" &&
+        event.eventData?.hoverDuration > 3000
+      ) {
         hesitationIndicators += 1;
       }
       if (event.eventData?.reactionTime > 10000) hesitationIndicators += 1.5;
     });
 
-    return totalEvents > 0 ? Math.min(1, hesitationIndicators / totalEvents) : 0;
+    return totalEvents > 0
+      ? Math.min(1, hesitationIndicators / totalEvents)
+      : 0;
   }
 
   _calculateConfidenceScore(interactions) {
@@ -318,78 +336,88 @@ class AdaptiveLearningService {
     let confidenceIndicators = 0;
     let totalDecisionPoints = 0;
 
-    interactions.forEach(event => {
-      if (event.eventType === 'answer_selected') {
+    interactions.forEach((event) => {
+      if (event.eventType === "answer_selected") {
         totalDecisionPoints++;
-        
+
         if (event.eventData?.reactionTime < 5000) confidenceIndicators += 1;
         if (event.eventData?.isCorrect) confidenceIndicators += 0.5;
       }
     });
 
-    return totalDecisionPoints > 0 ? confidenceIndicators / (totalDecisionPoints * 1.5) : 0.5;
+    return totalDecisionPoints > 0
+      ? confidenceIndicators / (totalDecisionPoints * 1.5)
+      : 0.5;
   }
 
   _determinePreferredLearningMode(interactions) {
     let mouseInteractions = 0;
     let keyboardInteractions = 0;
-    
-    interactions.forEach(event => {
-      if (['mouse_move', 'mouse_hover', 'mouse_click'].includes(event.eventType)) {
+
+    interactions.forEach((event) => {
+      if (
+        ["mouse_move", "mouse_hover", "mouse_click"].includes(event.eventType)
+      ) {
         mouseInteractions++;
       }
-      if (['key_down', 'key_up'].includes(event.eventType)) {
+      if (["key_down", "key_up"].includes(event.eventType)) {
         keyboardInteractions++;
       }
     });
 
-    return mouseInteractions > keyboardInteractions * 1.5 ? 'visual' : 
-           keyboardInteractions > mouseInteractions * 1.5 ? 'auditory' : 'multimodal';
+    return mouseInteractions > keyboardInteractions * 1.5
+      ? "visual"
+      : keyboardInteractions > mouseInteractions * 1.5
+        ? "auditory"
+        : "multimodal";
   }
 
   _recommendScaffolding(hesitationScore, confidenceScore) {
     if (hesitationScore > 0.7) {
-      return ['step-by-step-guidance', 'visual-hints', 'audio-encouragement'];
+      return ["step-by-step-guidance", "visual-hints", "audio-encouragement"];
     }
     if (confidenceScore < 0.3) {
-      return ['simplified-problems', 'worked-examples', 'frequent-feedback'];
+      return ["simplified-problems", "worked-examples", "frequent-feedback"];
     }
     if (hesitationScore > 0.5 || confidenceScore < 0.5) {
-      return ['visual-hints', 'occasional-prompts'];
+      return ["visual-hints", "occasional-prompts"];
     }
-    return ['minimal-guidance'];
+    return ["minimal-guidance"];
   }
 
   _getEngagementLevel(score) {
-    if (score > 0.7) return 'high';
-    if (score > 0.4) return 'medium';
-    return 'low';
+    if (score > 0.7) return "high";
+    if (score > 0.4) return "medium";
+    return "low";
   }
 
   _getConfidenceLevel(score) {
-    if (score > 0.7) return 'high';
-    if (score > 0.4) return 'medium';
-    return 'low';
+    if (score > 0.7) return "high";
+    if (score > 0.4) return "medium";
+    return "low";
   }
 
   _recommendHintType(interactionBehavior) {
-    if (interactionBehavior.preferredLearningMode === 'visual') {
-      return 'visual-diagram';
+    if (interactionBehavior.preferredLearningMode === "visual") {
+      return "visual-diagram";
     }
     if (interactionBehavior.hesitationScore > 0.6) {
-      return 'step-by-step';
+      return "step-by-step";
     }
-    return 'text-hint';
+    return "text-hint";
   }
 
   _recommendPaceAdjustment(interactionBehavior, performanceTrends) {
     if (interactionBehavior.hesitationScore > 0.7) {
-      return 'slower';
+      return "slower";
     }
-    if (performanceTrends.trend === 'improving' && interactionBehavior.confidenceScore > 0.7) {
-      return 'faster';
+    if (
+      performanceTrends.trend === "improving" &&
+      interactionBehavior.confidenceScore > 0.7
+    ) {
+      return "faster";
     }
-    return 'maintain';
+    return "maintain";
   }
 }
 

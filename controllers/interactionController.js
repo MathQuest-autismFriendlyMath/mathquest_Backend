@@ -1,5 +1,5 @@
 import InteractionEvent from "../models/InteractionEvent.js";
-import { catchAsync } from '../utils/errorHandler.js';
+import { catchAsync } from "../utils/errorHandler.js";
 
 // @desc    Log interaction event
 // @route   POST /api/interactions/event
